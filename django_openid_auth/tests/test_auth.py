@@ -41,12 +41,14 @@ from openid.message import Message, OPENID2_NS
 SREG_NS = "http://openid.net/sreg/1.0"
 AX_NS = "http://openid.net/srv/ax/1.0"
 
+
 class OpenIDBackendTests(TestCase):
 
     def setUp(self):
         super(OpenIDBackendTests, self).setUp()
         self.backend = OpenIDBackend()
-        self.old_openid_use_email_for_username = getattr(settings,
+        self.old_openid_use_email_for_username = getattr(
+            settings,
             'OPENID_USE_EMAIL_FOR_USERNAME', False)
 
     def tearDown(self):
@@ -68,16 +70,17 @@ class OpenIDBackendTests(TestCase):
                                 "last_name": "User",
                                 "email": "foo@example.com"})
 
-    def make_response_ax(self, schema="http://axschema.org/",
+    def make_response_ax(
+        self, schema="http://axschema.org/",
         fullname="Some User", nickname="someuser", email="foo@example.com",
-        first=None, last=None):
+            first=None, last=None):
         endpoint = OpenIDServiceEndpoint()
         message = Message(OPENID2_NS)
         attributes = [
             ("nickname", schema + "namePerson/friendly", nickname),
             ("fullname", schema + "namePerson", fullname),
             ("email", schema + "contact/email", email),
-            ]
+        ]
         if first:
             attributes.append(
                 ("first", "http://axschema.org/namePerson/first", first))
@@ -93,7 +96,8 @@ class OpenIDBackendTests(TestCase):
             endpoint, message, signed_fields=message.toPostArgs().keys())
 
     def test_extract_user_details_ax(self):
-        response = self.make_response_ax(fullname="Some User",
+        response = self.make_response_ax(
+            fullname="Some User",
             nickname="someuser", email="foo@example.com")
 
         data = self.backend._extract_user_details(response)
@@ -130,16 +134,17 @@ class OpenIDBackendTests(TestCase):
 
     def test_update_user_details_long_names(self):
         response = self.make_response_ax()
-        user = User.objects.create_user('someuser', 'someuser@example.com',
-            password=None)
-        data = dict(first_name=u"Some56789012345678901234567890123",
+        user = User.objects.create_user(
+            'someuser', 'someuser@example.com', password=None)
+        data = dict(
+            first_name=u"Some56789012345678901234567890123",
             last_name=u"User56789012345678901234567890123",
             email=u"someotheruser@example.com")
 
         self.backend.update_user_details(user, data, response)
 
-        self.assertEqual("Some56789012345678901234567890",  user.first_name)
-        self.assertEqual("User56789012345678901234567890",  user.last_name)
+        self.assertEqual("Some56789012345678901234567890", user.first_name)
+        self.assertEqual("User56789012345678901234567890", user.last_name)
 
     def test_extract_user_details_name_with_trailing_space(self):
         response = self.make_response_ax(fullname="SomeUser ")
@@ -165,9 +170,10 @@ class OpenIDBackendTests(TestCase):
             ('noemail', '', 'noemail'),
             ('', '@%.-', 'openiduser'),
             ('', '', 'openiduser'),
-            (None, None, 'openiduser')]:
-            self.assertEqual(expected,
-                self.backend._get_preferred_username(nick, email))
+            (None, None, 'openiduser')
+        ]:
+            self.assertEqual(
+                expected, self.backend._get_preferred_username(nick, email))
 
     def test_preferred_username_no_email_munging(self):
         for nick, email, expected in [
@@ -176,9 +182,10 @@ class OpenIDBackendTests(TestCase):
             ('noemail', '', 'noemail'),
             ('', '@%.-', 'openiduser'),
             ('', '', 'openiduser'),
-            (None, None, 'openiduser')]:
-            self.assertEqual(expected,
-                self.backend._get_preferred_username(nick, email))
+            (None, None, 'openiduser')
+        ]:
+            self.assertEqual(
+                expected, self.backend._get_preferred_username(nick, email))
 
 
 def suite():

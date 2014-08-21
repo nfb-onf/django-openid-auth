@@ -31,7 +31,8 @@
 __metaclass__ = type
 
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from openid.consumer.consumer import SUCCESS
 from openid.extensions import ax, sreg, pape
 
@@ -44,6 +45,9 @@ from django_openid_auth.exceptions import (
     MissingPhysicalMultiFactor,
     RequiredAttributeNotReturned,
 )
+
+User = get_user_model()
+
 
 class OpenIDBackend:
     """A django.contrib.auth backend that authenticates the user based on
@@ -152,8 +156,7 @@ class OpenIDBackend:
     def _get_preferred_username(self, nickname, email):
         if nickname:
             return nickname
-        if email and getattr(settings, 'OPENID_USE_EMAIL_FOR_USERNAME',
-            False):
+        if email and getattr(settings, 'OPENID_USE_EMAIL_FOR_USERNAME', False):
             suggestion = ''.join([x for x in email if x.isalnum()])
             if suggestion:
                 return suggestion
@@ -165,13 +168,13 @@ class OpenIDBackend:
         if getattr(settings, 'OPENID_STRICT_USERNAMES', False):
             if nickname is None or nickname == '':
                 raise MissingUsernameViolation()
-                
+
         # If we don't have a nickname, and we're not being strict, use a default
         nickname = nickname or 'openiduser'
 
         # See if we already have this nickname assigned to a username
         try:
-            user = User.objects.get(username__exact=nickname)
+            User.objects.get(username__exact=nickname)
         except User.DoesNotExist:
             # No conflict, we can use this nickname
             return nickname
@@ -183,12 +186,12 @@ class OpenIDBackend:
                 user__username__startswith=nickname)
             # No exception means we have an existing user for this identity
             # that starts with this nickname.
-            
+
             # If they are an exact match, the user already exists and hasn't
             # changed their username, so continue to use it
             if nickname == user_openid.user.username:
                 return nickname
-            
+
             # It is possible we've had to assign them to nickname+i already.
             oid_username = user_openid.user.username
             if len(oid_username) > len(nickname):
@@ -202,7 +205,6 @@ class OpenIDBackend:
         except UserOpenID.DoesNotExist:
             # No user associated with this identity_url
             pass
-
 
         if getattr(settings, 'OPENID_STRICT_USERNAMES', False):
             if User.objects.filter(username__exact=nickname).count() > 0:
@@ -220,7 +222,7 @@ class OpenIDBackend:
             if i > 1:
                 username += str(i)
             try:
-                user = User.objects.get(username__exact=username)
+                User.objects.get(username__exact=username)
             except User.DoesNotExist:
                 break
             i += 1
@@ -238,11 +240,12 @@ class OpenIDBackend:
                     "An attribute required for logging in was not "
                     "returned ({0}).".format(required_attr))
 
-        nickname = self._get_preferred_username(details['nickname'],
-            details['email'])
+        nickname = self._get_preferred_username(
+            details['nickname'], details['email'])
         email = details['email'] or ''
 
-        username = self._get_available_username(nickname,
+        username = self._get_available_username(
+            nickname,
             openid_response.identity_url)
 
         user = User.objects.create_user(username, email, password=None)
@@ -303,12 +306,11 @@ class OpenIDBackend:
         if len(teams_mapping) == 0:
             return
 
-        current_groups = set(user.groups.filter(
-                name__in=teams_mapping.values()))
+        current_groups = set(user.groups.filter(name__in=teams_mapping.values()))
         desired_groups = set(Group.objects.filter(
-                name__in=[teams_mapping[lp_team]
-                          for lp_team in teams_response.is_member
-                          if lp_team in teams_mapping]))
+                             name__in=[teams_mapping[lp_team]
+                                       for lp_team in teams_response.is_member
+                                       if lp_team in teams_mapping]))
         for group in current_groups - desired_groups:
             user.groups.remove(group)
         for group in desired_groups - current_groups:
@@ -327,4 +329,3 @@ class OpenIDBackend:
                 break
 
         user.save()
-

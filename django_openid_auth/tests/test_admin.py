@@ -28,17 +28,16 @@
 """
 Tests for the django_openid_auth Admin login form replacement.
 """
-
-import os
 import unittest
 
 from django.conf import settings
-from django.contrib.auth.models import User, AnonymousUser
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
+from django.test import TestCase
 
 settings.OPENID_USE_AS_ADMIN_LOGIN = True
-from django_openid_auth import admin
 
-from django.test import TestCase
+User = get_user_model()
 
 
 def create_user(is_staff=False, authenticated=True):
