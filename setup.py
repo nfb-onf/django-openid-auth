@@ -43,7 +43,7 @@ from distutils.core import setup
 
 
 description, long_description = __doc__.split('\n\n', 1)
-VERSION = '0.5.1-dev-sd'
+VERSION = '0.5.2-dev-sd'
 
 setup(
     name='django-openid-auth',
